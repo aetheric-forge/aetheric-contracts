@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AethericContracts.Membership/AethericContracts.Membership.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AethericContracts.Membership.Tests/AethericContracts.Membership.Tests.csproj" />
+  </Folder>
+</Solution>
