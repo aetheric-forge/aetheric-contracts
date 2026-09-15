@@ -28,6 +28,12 @@ public sealed class MongoMembershipApplicationStore : IMembershipApplicationStor
     /// write throws "GuidSerializer cannot serialize a Guid when GuidRepresentation is Unspecified."
     /// Registered once per process rather than per-property attributes, since MembershipApplication
     /// itself should stay free of any MongoDB-specific concerns.
+    ///
+    /// RegisterSerializer itself throws if a serializer is already registered for the type - not
+    /// idempotent - so a host app that already registers its own Guid serializer (as aetheric-admin
+    /// does, for its own Guid-keyed Mongo stores) would otherwise crash this store's first
+    /// construction. This type can't know what the host already did, so it must tolerate that case
+    /// rather than assume it owns the registration.
     /// </summary>
     private static void EnsureGuidRepresentationRegistered()
     {
@@ -36,7 +42,16 @@ public sealed class MongoMembershipApplicationStore : IMembershipApplicationStor
             return;
         }
 
-        BsonSerializer.RegisterSerializer(new MongoDB.Bson.Serialization.Serializers.GuidSerializer(GuidRepresentation.Standard));
+        try
+        {
+            BsonSerializer.RegisterSerializer(new MongoDB.Bson.Serialization.Serializers.GuidSerializer(GuidRepresentation.Standard));
+        }
+        catch (BsonSerializationException)
+        {
+            // Already registered (by this process's host app, or a prior instance of this store) -
+            // fine either way, as long as it's Standard representation, which every writer/reader of
+            // this shared collection is expected to agree on.
+        }
     }
 
     public async Task<MembershipApplication> SubmitAsync(
