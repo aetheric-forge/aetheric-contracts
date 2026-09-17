@@ -4,8 +4,12 @@ namespace AethericContracts.Interactions;
 public interface IInteractionProvider
 {
     string Id { get; }
+    Task<IReadOnlyList<InteractionAction>> GetActionsAsync(string subjectId, CancellationToken cancellationToken = default);
     IInteractionSession Open(string subjectId, string actionId);
 }
+
+/// <summary>Action availability is a presentation hint; invoking it still requires authorization.</summary>
+public sealed record InteractionAction(string Id, string Label, bool IsEnabled = true, string? UnavailableReason = null);
 
 /// <summary>
 /// A server-side, single-subject interaction session. Implementations authorize every operation.
